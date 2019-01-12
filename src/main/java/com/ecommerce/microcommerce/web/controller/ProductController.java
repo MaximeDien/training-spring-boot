@@ -2,6 +2,7 @@ package com.ecommerce.microcommerce.web.controller;
 
 import com.ecommerce.microcommerce.dao.ProductDao;
 import com.ecommerce.microcommerce.model.Product;
+import com.ecommerce.microcommerce.web.exceptions.ProduitGratuitException;
 import com.ecommerce.microcommerce.web.exceptions.ProduitIntrouvableException;
 import com.fasterxml.jackson.databind.ser.FilterProvider;
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
@@ -36,6 +37,12 @@ public class ProductController {
 
         Iterable<Product> produits = productDao.findAll();
 
+        for (Product product : produits) {
+            if (product.getPrix() <= 0) {
+                throw new ProduitGratuitException("ProduitGratuitException ID = " + product.getId() +" : prix = 0 ");
+            }
+        }
+
         SimpleBeanPropertyFilter monFiltre = SimpleBeanPropertyFilter.serializeAllExcept("prixAchat");
 
         FilterProvider listDeNosFiltres = new SimpleFilterProvider().addFilter("monFiltreDynamique", monFiltre);
@@ -58,6 +65,10 @@ public class ProductController {
 
         if(produit==null) throw new ProduitIntrouvableException("Le produit avec l'id " + id + " est INTROUVABLE. Écran Bleu si je pouvais.");
 
+        if(produit.getPrix() <= 0){
+            throw new ProduitGratuitException("ProduitGratuitException ID = " + id +" : prix = 0 ");
+        }
+
         return produit;
     }
 
@@ -73,6 +84,10 @@ public class ProductController {
 
         if (productAdded == null)
             return ResponseEntity.noContent().build();
+
+        if(productAdded.getPrix() <= 0){
+            throw new ProduitGratuitException("ProduitGratuitException ID = " + productAdded.getId() +" : prix = 0 ");
+        }
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
@@ -101,6 +116,11 @@ public class ProductController {
     public List<Product>  testeDeRequetes(@PathVariable int prix) {
 
         return productDao.chercherUnProduitCher(400);
+    }
+
+    @GetMapping(value = "/Produits/tries")
+    public List<Product> getProductsListOrderedByName() {
+        return productDao.findAllByOrderByNom();
     }
 
 
