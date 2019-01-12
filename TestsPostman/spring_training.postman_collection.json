@@ -1,0 +1,99 @@
+{
+	"info": {
+		"_postman_id": "a48c45b7-dc94-4292-a582-7e8e2f5b0753",
+		"name": "spring_training",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "marge",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:9090/Produits/marge",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "9090",
+					"path": [
+						"Produits",
+						"marge"
+					]
+				},
+				"description": "Affiche la marge de tous les produits"
+			},
+			"response": []
+		},
+		{
+			"name": "listeProduitsTriesAsJson",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": ""
+				},
+				"description": "trie les produit par ordre alphabétique en JSON"
+			},
+			"response": []
+		},
+		{
+			"name": "listeProduitsAsJson",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:9090/Produits",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "9090",
+					"path": [
+						"Produits"
+					]
+				},
+				"description": "liste tous les produit dans un JSON"
+			},
+			"response": []
+		},
+		{
+			"name": "afficherUnProduitAsJson",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": ""
+				},
+				"url": {
+					"raw": "http://localhost:9090/Produits/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "9090",
+					"path": [
+						"Produits",
+						"1"
+					]
+				},
+				"description": "Affiche un seul produit en JSON"
+			},
+			"response": []
+		}
+	]
+}

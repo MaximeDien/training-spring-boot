@@ -21,7 +21,9 @@ import java.util.List;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.*;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Matchers.matches;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -105,6 +107,22 @@ public class MicrocommerceApplicationTests {
                 .andExpect(jsonPath("$[0].nom", is(produitB.getNom())))
                 .andExpect(jsonPath("$[0].prix", is(produitB.getPrix())))
                 .andExpect(jsonPath("$[0].prixAchat", is(produitB.getPrixAchat())));
+    }
+
+
+    @Test
+    public void listeProduitsMargeAsJson() throws Exception {
+        List<Product> productsList = new ArrayList<>();
+        productsList.add(produitB);
+        productsList.add(produitA);
+        given(productDao.findAll()).willReturn(productsList);
+
+        mockMvc.perform(get("/Produits/marge")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$['" + produitA.toString() + "']", is(produitA.getPrix() - produitA.getPrixAchat())))
+                .andExpect(jsonPath("$['" + produitB.toString() + "']", is(produitB.getPrix() - produitB.getPrixAchat())));
+
     }
 
 }
