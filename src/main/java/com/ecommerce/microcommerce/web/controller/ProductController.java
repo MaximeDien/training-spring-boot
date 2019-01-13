@@ -17,7 +17,6 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import javax.validation.Valid;
 import java.net.URI;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -80,9 +79,11 @@ public class ProductController {
 
 
     //ajouter un produit
-    @PostMapping(value = "/Produits")
-    @ApiOperation(value = "Ajoute un produit")
+    //@PostMapping(value = "/Produits")
 
+
+    @PutMapping(value = "/Produits")
+    @ApiOperation(value = "Ajoute un produit")
     public ResponseEntity<Void> ajouterProduit(@Valid @RequestBody Product product) {
 
         Product productAdded =  productDao.save(product);
@@ -103,6 +104,7 @@ public class ProductController {
         return ResponseEntity.created(location).build();
     }
 
+
     @DeleteMapping (value = "/Produits/{id}")
     @ApiOperation(value = "Supprime un produit")
     public void supprimerProduit(@PathVariable int id) {
@@ -110,10 +112,14 @@ public class ProductController {
         productDao.delete(id);
     }
 
-    @PutMapping (value = "/Produits")
+    //@PutMapping (value = "/Produits")
+    @PostMapping (value = "/Produits")
     @ApiOperation(value = "Sauvegarde les modifications sur un produit")
     public void updateProduit(@RequestBody Product product) {
 
+        if(product.getPrix() <= 0){
+            throw new ProduitGratuitException("ProduitGratuitException ID = " + product.getId() +" : prix = 0 ");
+        }
         productDao.save(product);
     }
 
@@ -132,7 +138,7 @@ public class ProductController {
         return productDao.findAllByOrderByNom();
     }
 
-    @GetMapping(value = "Produits/marge")
+    @GetMapping(value = "/Produits/marge")
     @ApiOperation(value = "Calculer la marge de tous produits")
     public MappingJacksonValue calculerMargeProduit(){
         Iterable<Product> produits = productDao.findAll();

@@ -4,10 +4,12 @@ import com.ecommerce.microcommerce.dao.ProductDao;
 import com.ecommerce.microcommerce.model.Product;
 import com.ecommerce.microcommerce.web.controller.ProductController;
 import com.google.gson.Gson;
+import net.minidev.json.JSONArray;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -21,12 +23,9 @@ import java.util.List;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.*;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Matchers.matches;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -47,8 +46,8 @@ public class MicrocommerceApplicationTests {
 
 	@Before
     public void initProduct(){
-        this.produitA = new Product(1, "Nitendo Switch", 350, 325);
-        this.produitB = new Product(2, "GameCube Controller", 30, 47);
+        this.produitA = new Product(1, "Nitendo Switch", 350, 315);
+        this.produitB = new Product(2, "GameCube Controller", 30, 15);
     }
 
 	@Test
@@ -60,11 +59,11 @@ public class MicrocommerceApplicationTests {
 
     @Test
     public void listeProduitsAsJson() throws Exception {
-        List<Product> productsList = new ArrayList<>();
-        productsList.add(produitA);
-        productsList.add(produitB);
+        List<Product> listeProduits = new ArrayList<>();
+        listeProduits.add(produitA);
+        listeProduits.add(produitB);
 
-        given(productDao.findAll()).willReturn(productsList);
+        given(productDao.findAll()).willReturn(listeProduits);
 
         mockMvc.perform(get("/Produits")
                 .contentType(MediaType.APPLICATION_JSON))
@@ -94,10 +93,10 @@ public class MicrocommerceApplicationTests {
 
     @Test
     public void listeProduitsTriesAsJson() throws Exception {
-        List<Product> productsList = new ArrayList<>();
-        productsList.add(produitB);
-        productsList.add(produitA);
-        given(productDao.findAllByOrderByNom()).willReturn(productsList);
+        List<Product> listeProduits = new ArrayList<>();
+        listeProduits.add(produitB);
+        listeProduits.add(produitA);
+        given(productDao.findAllByOrderByNom()).willReturn(listeProduits);
 
         mockMvc.perform(get("/Produits/tries")
                 .contentType(MediaType.APPLICATION_JSON))
@@ -112,10 +111,10 @@ public class MicrocommerceApplicationTests {
 
     @Test
     public void listeProduitsMargeAsJson() throws Exception {
-        List<Product> productsList = new ArrayList<>();
-        productsList.add(produitB);
-        productsList.add(produitA);
-        given(productDao.findAll()).willReturn(productsList);
+        List<Product> listeProduits = new ArrayList<>();
+        listeProduits.add(produitB);
+        listeProduits.add(produitA);
+        given(productDao.findAll()).willReturn(listeProduits);
 
         mockMvc.perform(get("/Produits/marge")
                 .contentType(MediaType.APPLICATION_JSON))
@@ -123,6 +122,121 @@ public class MicrocommerceApplicationTests {
                 .andExpect(jsonPath("$['" + produitA.toString() + "']", is(produitA.getPrix() - produitA.getPrixAchat())))
                 .andExpect(jsonPath("$['" + produitB.toString() + "']", is(produitB.getPrix() - produitB.getPrixAchat())));
 
+    }
+
+    @Test
+    public void ajouterProduitAsJson() throws Exception {
+
+        Product produitZ = new Product(1, "Filco Majestouch 2 Yellow TKL Mechanical Keyboard", 125, 125);
+        String newProductLocation = String.format("http://localhost/Produits/%s", produitZ.getId());
+
+        given(productDao.save(Mockito.any(Product.class)))
+                .willReturn(produitZ);
+
+        Gson gsonBuilder = new Gson();
+        String newProductAsJson = gsonBuilder.toJson(produitZ);
+
+        mockMvc.perform(
+                put("/Produits")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(newProductAsJson))
+                .andExpect(status().isCreated())
+                .andExpect(header().string("Location", newProductLocation));
+    }
+
+    @Test
+    public void ajouterProduitGratuitAsJson() throws Exception {
+
+        Product produitZ = new Product(1, "Filco Majestouch 2 Yellow TKL Mechanical Keyboard", 0, 125);
+
+        given(productDao.save(Mockito.any(Product.class)))
+                .willReturn(produitZ);
+
+        Gson gsonBuilder = new Gson();
+        String newProductAsJson = gsonBuilder.toJson(produitZ);
+
+        mockMvc.perform(
+                put("/Produits")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(newProductAsJson))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    public void updateProduitAsJson() throws Exception {
+
+        Product produitZ = new Product(1, "Filco Majestouch 2 Yellow TKL Mechanical Keyboard", 125, 125);
+
+        given(productDao.save(Mockito.any(Product.class)))
+                .willReturn(produitZ);
+
+        Gson gsonBuilder = new Gson();
+        String newProductAsJson = gsonBuilder.toJson(produitZ);
+
+        mockMvc.perform(
+                post("/Produits")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(newProductAsJson))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    public void updateProduitGratuitExceptionAsJson() throws Exception {
+
+        Product produitZ = new Product(1, "Filco Majestouch 2 Yellow TKL Mechanical Keyboard", 0, 125);
+
+        given(productDao.save(Mockito.any(Product.class)))
+                .willReturn(produitZ);
+
+        Gson gsonBuilder = new Gson();
+        String newProductAsJson = gsonBuilder.toJson(produitZ);
+
+        mockMvc.perform(
+                post("/Produits")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(newProductAsJson))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    public void deleteProduitAsJson() throws Exception {
+
+        Product produitZ = new Product(1, "Filco Majestouch 2 Yellow TKL Mechanical Keyboard", 125, 125);
+        List<Product> listeProduits = new ArrayList<>();
+        listeProduits.add(produitZ);
+        listeProduits.remove(0);
+        productDao.save(produitZ);
+        productDao.delete(1);
+
+        given(productDao.findAll()).willReturn(listeProduits);
+
+        mockMvc.perform(get("/Produits")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
+    public void testListeProduitMargeAsJson() throws Exception {
+
+        List<Product> listeProduits = new ArrayList<>();
+        listeProduits.add(produitA);
+        listeProduits.add(produitB);
+
+        given(productDao.findAll()).willReturn(listeProduits);
+
+        JSONArray produitAExpectedMargin = new JSONArray();
+        produitAExpectedMargin.add(produitA.getPrix() - produitA.getPrixAchat());
+
+        JSONArray produitBExpectedMargin = new JSONArray();
+        produitBExpectedMargin.add(produitB.getPrix() - produitB.getPrixAchat());
+
+        mockMvc.perform(get("/Produits/marge")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].*", is(produitAExpectedMargin)))
+                .andExpect(jsonPath("$[1].*", is(produitBExpectedMargin)));
     }
 
 }
