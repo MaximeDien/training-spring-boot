@@ -4,7 +4,6 @@ import com.ecommerce.microcommerce.dao.ProductDao;
 import com.ecommerce.microcommerce.model.Product;
 import com.ecommerce.microcommerce.web.controller.ProductController;
 import com.google.gson.Gson;
-import net.minidev.json.JSONArray;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,8 +45,8 @@ public class MicrocommerceApplicationTests {
 
 	@Before
     public void initProduct(){
-        this.produitA = new Product(1, "Nitendo Switch", 350, 315);
-        this.produitB = new Product(2, "GameCube Controller", 30, 15);
+        this.produitA = new Product(1, "Nitendo Switch", 350, 325);
+        this.produitB = new Product(2, "GameCube Controller", 30, 47);
     }
 
 	@Test
@@ -73,6 +72,18 @@ public class MicrocommerceApplicationTests {
                 .andExpect(jsonPath("$[0].nom", is(produitA.getNom())))
                 .andExpect(jsonPath("$[0].prix", is(produitA.getPrix())))
                 .andExpect(jsonPath("$[0].prixAchat", is(produitA.getPrixAchat())));
+
+        List<Product> listeProduitsERR = new ArrayList<>();
+        produitA.setPrix(0);
+        listeProduitsERR.add(produitA);
+        listeProduitsERR.add(produitB);
+
+        given(productDao.findAll()).willReturn(listeProduitsERR);
+
+        mockMvc.perform(get("/Produits", 1)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isConflict());
+
     }
 
     @Test
@@ -89,6 +100,14 @@ public class MicrocommerceApplicationTests {
                 .andExpect(jsonPath("$.nom", is(produitA.getNom())))
                 .andExpect(jsonPath("$.prix", is(produitA.getPrix())))
                 .andExpect(jsonPath("$.prixAchat", is(produitA.getPrixAchat())));
+        mockMvc.perform(get("/Produits/{1}", 58)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound());
+
+        produitA.setPrix(0);
+        mockMvc.perform(get("/Produits/{1}", produitID)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isConflict());
     }
 
     @Test
@@ -108,22 +127,6 @@ public class MicrocommerceApplicationTests {
                 .andExpect(jsonPath("$[0].prixAchat", is(produitB.getPrixAchat())));
     }
 
-
-    @Test
-    public void listeProduitsMargeAsJson() throws Exception {
-        List<Product> listeProduits = new ArrayList<>();
-        listeProduits.add(produitB);
-        listeProduits.add(produitA);
-        given(productDao.findAll()).willReturn(listeProduits);
-
-        mockMvc.perform(get("/Produits/marge")
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$['" + produitA.toString() + "']", is(produitA.getPrix() - produitA.getPrixAchat())))
-                .andExpect(jsonPath("$['" + produitB.toString() + "']", is(produitB.getPrix() - produitB.getPrixAchat())));
-
-    }
-
     @Test
     public void ajouterProduitAsJson() throws Exception {
 
@@ -140,8 +143,21 @@ public class MicrocommerceApplicationTests {
                 put("/Produits")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(newProductAsJson))
-                .andExpect(status().isCreated())
-                .andExpect(header().string("Location", newProductLocation));
+                //.andExpect(status().isCreated())
+                .andExpect(status().isBadRequest());
+                //.andExpect(header().string("Location", newProductLocation));
+
+        Product produitVide = new Product();
+        given(productDao.save(Mockito.any(Product.class)))
+                .willReturn(produitVide);
+
+        Gson gsonBuilderVide = new Gson();
+        String newProductAsJsonVide = gsonBuilderVide.toJson(produitVide);
+        mockMvc.perform(
+                put("/Produits")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(newProductAsJsonVide)).andExpect(status().isBadRequest());
+
     }
 
     @Test
@@ -159,7 +175,7 @@ public class MicrocommerceApplicationTests {
                 put("/Produits")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(newProductAsJson))
-                .andExpect(status().isBadRequest());
+                        .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -217,26 +233,43 @@ public class MicrocommerceApplicationTests {
     }
 
     @Test
-    public void testListeProduitMargeAsJson() throws Exception {
+    public void findProduitChere() throws Exception {
 
+        Product produitZ = new Product(1, "Filco Majestouch 2 Yellow TKL Mechanical Keyboard", 125, 125);
         List<Product> listeProduits = new ArrayList<>();
         listeProduits.add(produitA);
         listeProduits.add(produitB);
 
-        given(productDao.findAll()).willReturn(listeProduits);
+        given(productDao.chercherUnProduitCher(100)).willReturn(listeProduits);
 
-        JSONArray produitAExpectedMargin = new JSONArray();
-        produitAExpectedMargin.add(produitA.getPrix() - produitA.getPrixAchat());
+        mockMvc.perform(get("/test/produits/100")
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+    }
 
-        JSONArray produitBExpectedMargin = new JSONArray();
-        produitBExpectedMargin.add(produitB.getPrix() - produitB.getPrixAchat());
+    @Test
+    public void listeProduitsMargeAsJson() throws Exception {
+        List<Product> productsList = new ArrayList<>();
+
+        int produitIDA = 1;
+        //int produitIDB = 2;
+
+        produitA.setId(produitIDA);
+        //produitB.setId(produitIDB);
+
+        //given(productDao.findById(produitIDB)).willReturn(produitB);
+        given(productDao.findById(produitIDA)).willReturn(produitA);
+
+        //productsList.add(produitB);
+        productsList.add(produitA);
+        given(productDao.findAll()).willReturn(productsList);
 
         mockMvc.perform(get("/Produits/marge")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$", hasSize(2)))
-                .andExpect(jsonPath("$[0].*", is(produitAExpectedMargin)))
-                .andExpect(jsonPath("$[1].*", is(produitBExpectedMargin)));
+                .andExpect(content().string("{\"Product{id=1, nom='Nitendo Switch', prix=350}\":25.0}"));
+
     }
 
 }
